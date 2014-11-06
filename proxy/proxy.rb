@@ -1,3 +1,4 @@
+#!/usr/local/bin/ruby
 require 'em-proxy'
 require 'ansi/code'
 require 'uri'
@@ -22,8 +23,13 @@ require 'uri'
 module BalancingProxy
   extend self
 
-  #BACKENDS = 5.times.map { |idx| {:url => "http://0.0.0.0:#{5000+idx}"} }
-  BACKENDS = ARGV.map { |ip| {:url => "http://#{ip}:3000"} }
+  BACKENDS = []
+  File.foreach('/etc/hosts') do |line|
+    entries = line.chomp.split(/\s+/)
+    if entries[1].match(/server\_\d+/)
+      BACKENDS << {:url => "http://#{entries[0]}:3000"}
+    end
+  end
 
   # Represents a "backend", ie. the endpoint for the proxy.
   #
@@ -142,7 +148,7 @@ module BalancingProxy
 
       Proxy.start(:host => host, :port => port, :debug => false) do |conn|
 
-        Backend.select(:random) do |backend|
+        Backend.select(:roundrobin) do |backend|
 
           conn.server backend, :host => backend.host, :port => backend.port
 
@@ -190,4 +196,3 @@ if __FILE__ == $0
   BalancingProxy::Server.run
 
 end
-

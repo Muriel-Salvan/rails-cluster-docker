@@ -1,0 +1,10 @@
+server:
+  build: ./server
+  command: /usr/local/bin/server.rb
+proxy:
+  build: ./proxy
+  command: /usr/local/bin/proxy.rb
+  links:
+    - server
+  ports:
+    - 3000:3000
